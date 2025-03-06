@@ -1,45 +1,57 @@
-<p align="center">
-  <img src="assets/README/image.png" width="200" alt="Logo">
-</p>
+# THETOOL EXTRACTION SCRIPTS
+This is a python script that extract:
 
----
+1. The following Looker System Activity views using [Looker API](https://cloud.google.com/looker/docs/api-intro):
+    - user
+    - user_facts
+    - user_facts_role
+    - role
+    - group_user
+    - group
+    - dashboard
+    - look
+    - explore_label
+    - history
+    - query
+    - lookml_fields
+    - query_metrics
 
-# Felix the field agent
+# 1. Prerequisite
+## 1.1. Roles and permissions
+### Looker
+This script extract [Looker System Activity](https://cloud.google.com/looker/docs/system-activity-pages) data so at the minimum [the API client ID and secret](#263-replace-the-your_api3_client_id--and-your_api3_client_secret-with-your-api-client-id-and-secret) need to have `see_system_activity` permission.
+# 2. Setting up
+## 2.1. Set up Python environment and install requirements
 
-## I. Overview
-Have you ever wondered which LookML fields are completely unused and could benefit from cleanup? 
-Or perhaps you’ve noticed certain dynamic fields that are frequently used and would be better off hard-coded in LookML? 
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+## 2.2. Configuring `looker.ini`
 
-The solution we provided is a comprehensive suite of tailored dashboards designed to enhance the monitoring of Looker activity. By leveraging the Looker API, we extract Looker System Activity data and enrich it with more granular details, which are then permanently stored in BigQuery. This robust framework enables thorough analysis of field usage and identification of optimization opportunities. 
+### 2.2.1. Update the _&lt;your_looker_endpoint&gt;_ in `base_url` with your instance url.
 
-## II. Key Features
-### Actionable Dashboards:
-1. **Monitoring Unused Fields**: Identify LookML fields that are never queried by users, allowing for cleanup.
-<img width="947" alt="image" src="https://github.com/user-attachments/assets/8cc4ac6e-906f-42dc-97f8-3836a5c07686">
+Example:
+```
+base_url=https://example.cloud.looker.com:19999
+```
 
-2. **Impact Analysis of Field Usage**: View LookML field usage across Dashboards, Looks.
-<img width="906" alt="image" src="https://github.com/user-attachments/assets/1ae3d94e-2c93-4c38-9e8b-bfa38e689b92">
+### 2.2.2. Replace the _&lt;your_API3_client_id&gt;_  and _&lt;your_API3_client_secret&gt;_ with your API client ID and secret.
 
-3. **Dynamic Field Analysis**: Detect custom dimensions, measures, and table calculations that are repeatedly used.
-<img width="950" alt="Dynamic fields" src="https://github.com/user-attachments/assets/2b124690-be2a-4bea-8f0a-46ec88e8e6f3">
+Refer to [this guide](https://cloud.google.com/looker/docs/api-auth#authentication_with_an_sdk) to create client ID and secret for this step.
 
-4. **Fields that do not follow LookML best practices**: Highlight fields that do not adhere to LookML best practices for easier maintenance.
-<img width="894" alt="image" src="https://github.com/user-attachments/assets/4f723b36-cd5c-4238-b61b-066cc447d48b">
+### 3 Run `main.py`
+For extracting all tables run
+```bash
+python main.py
+```
+For extracting 1 specific table run
+```bash
+python main.py -t <table_name>
+```
 
-5. **Fields Used in Filters**: 
-- Leverage partitioning and clustering on fields that are mostly used in report filters to optimize Looker performance and query costs.
-- Analyze fields involved in the longest-running queries for optimization.
-<img width="941" alt="image" src="https://github.com/user-attachments/assets/85d72ef4-4773-4096-8eb3-0b372273baa1">
+> [!CAUTION]
+> The script is running on full refresh mode so old data will be purged!!!
 
-### Robust Extraction Pipeline:
-The extraction script provided will allow you extract:
-- LookML fields, views and explores directly from LookML projects
-- Looker System Activity views using Looker API
 
-## III. Setup Instructions
-1. **Data Extraction**:
-- This Block requires Looker System Activity data specific to your instance. You must use the provided data extraction pipeline [HERE](https://github.com/joon-solutions/Felix-the-field-agent/blob/main/extraction/README.md) to populate the necessary dataset.
-- No additional subscriptions are required.
-2. **Database Configuration**: Configure a database connection to the project where your extracted System Activity dataset is stored.
-3. **Install the Block**: Deploy this Block into your Looker instance.
-4. **Verify Integration**: Field names in the Block are designed to match those in your dataset directly, ensuring seamless integration and minimal setup effort.
