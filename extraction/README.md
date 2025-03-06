@@ -22,7 +22,6 @@ This is a python script that extract:
 This script extract [Looker System Activity](https://cloud.google.com/looker/docs/system-activity-pages) data so at the minimum [the API client ID and secret](#263-replace-the-your_api3_client_id--and-your_api3_client_secret-with-your-api-client-id-and-secret) need to have `see_system_activity` permission.
 # 2. Setting up
 ## 2.1. Set up Python environment and install requirements
-*(this step is optional if you use our [quickstart](#31-quick-start-way) script - we'll create a virtual environment for you.)*
 
 ```bash
 python -m venv .venv
