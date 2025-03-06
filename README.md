@@ -1,5 +1,5 @@
-# THETOOL EXTRACTION SCRIPTS
-This is a python script that extract:
+# Looker System Activity Extraction Steps
+This is a python script that extracts:
 
 1. The following Looker System Activity views using [Looker API](https://cloud.google.com/looker/docs/api-intro):
     - user
