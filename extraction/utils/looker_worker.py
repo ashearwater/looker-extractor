@@ -21,9 +21,6 @@ from .enums import (ROW_LIMIT,
                          START_ID,
                          LOOKER_REPO_PATH
                          )
-from .lookml_repo import LookerRepo
-
-
 
 class LookerWorker(Worker):
 
@@ -57,11 +54,6 @@ class LookerWorker(Worker):
             self.cursor_value = None
             self.is_last_batch = None
         self.file_num = -1
-
-    def set_project_mapping(self, project_mapping_path: str):
-        with open(project_mapping_path, "r") as f:
-            project_mapping = json.load(f)
-        self.project_mapping = project_mapping
 
     # @@@ STEP 6 @@@
     def _fetch_rowcount(self) -> int | None:
@@ -210,29 +202,14 @@ class LookerWorker(Worker):
 
     # @@@ STEP 8 @@@
     def fetch(self, **kwargs):
-
-        if self.table_name == 'explore_label': # explore_label use a different API to extract from Looker
-            self.get_explore_label()
-            self.df = self.get_explore_label()
-        elif self.table_name == 'lookml_fields':
-            if self.project_mapping:
-                looker_repo = LookerRepo(LOOKER_REPO_PATH, self.project_mapping)
-                self.df = looker_repo.run()
-            else:
-                raise ValueError(f"""Extracting {self.table_name} without project mapping file.
-                                 Please make a copy of looker_project.json and fill in the
-                                 mappings of your LookML project(s).
-                                 """)
             
+        query_id = self.create_query(self.table_data,
+                self.start_time,
+                )
 
-        else:
-            query_id = self.create_query(self.table_data,
-                    self.start_time,
-                    )
-
-            query_results = self.run_query(query_id)
-            self.query_results = query_results
-            self.df = pd.read_csv(StringIO(query_results))
+        query_results = self.run_query(query_id)
+        self.query_results = query_results
+        self.df = pd.read_csv(StringIO(query_results))
 
         self.map_fields_name_with_config()
 
@@ -251,17 +228,6 @@ class LookerWorker(Worker):
                   "\tThis view will be truncated to 50000 rows.\n\n",
                   category=UserWarning
                   )
-
-
-    def map_fields_name_with_config(self):
-        """
-        uses the field name specified in the schema file instead
-        of fields returned from the api.
-        plus, this maps 1-1 with explore's view.
-        """
-        schema_info = self.schema_info
-        columns = [schema_info[i]['name'] for i,_ in enumerate(schema_info)]
-        self.df.columns = columns
 
     # @@@ STEP 12 @@@
     def dump(self, **kwargs) -> None:
@@ -302,56 +268,3 @@ class LookerWorker(Worker):
                 if len(self.df) < self.row_limit:
                     self.is_last_batch = True
                 self.dump()
-
-
-
-    def transform_api_output(self,output):
-        # turn each output record in to a dictionary
-        output = list(map(dict,output))
-        for model in output:
-            # Remove 'can'
-            model.pop('can')
-
-            # turn each explore record in to a dictionary
-            model['explores'] = list(map(dict, model['explores']))
-
-            # set default value for key 'explore_label' for each explore
-            for explore in model['explores']:
-                explore.setdefault('label', None)
-                explore.setdefault('description', None)
-
-        # unnest explores fields
-        transformed_data = [
-            {
-                **{
-                    'id': hashlib.sha256((model['name'] + '-' + explore['name']).encode()).hexdigest(),
-                    'model_name': model['name'],
-                    'model_label': model['label'],
-                    'model_allowed_db_connection_names': model['allowed_db_connection_names'],
-                    'model_has_content': model['has_content'],
-                    'project_name': model['project_name'],
-                    'model_unlimited_db_connections': model['unlimited_db_connections']
-                },
-                **{
-                    'explore_name': explore['name'],
-                    'explore_label': explore['label'],
-                    'is_explore_hidden': explore['hidden'],
-                    'explore_description': explore['description'],
-                    'explore_group_label': explore['group_label']
-                }
-            }
-            for model in output
-            for explore in model['explores']
-        ]
-
-        return transformed_data
-
-    def get_explore_label(self):
-        output = self.sdk.all_lookml_models()
-        transformed_data = self.transform_api_output(output)
-
-        header = list(transformed_data[0].keys())
-        values = [i.values() for i in transformed_data]
-        df = pd.DataFrame(values,columns=header)
-
-        return df
