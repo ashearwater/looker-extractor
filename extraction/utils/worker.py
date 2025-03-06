@@ -7,6 +7,7 @@ from .enums import CSV_DUMP_DIR
 import pandas as pd
 
 class Worker(ABC):
+    # @@@ STEP 3 @@@
     @abstractmethod
     def __init__(self,
                  table_name: str,
@@ -21,6 +22,7 @@ class Worker(ABC):
         self.csv_target_path = os.path.join(CSV_DUMP_DIR,self.table_name)
         self.csv_name = os.path.join(self.csv_target_path,f"{self.table_name}.csv")
 
+    # @@@ STEP 4 @@@
     def _load_schema(self,schema_file):
         with open(schema_file) as f:
             schema = yaml.safe_load(f)  # Load the schema from the file

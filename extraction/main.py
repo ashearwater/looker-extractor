@@ -3,7 +3,6 @@ import os
 import shutil
 
 from utils.looker_worker import  LookerWorker
-from utils.bigquery_worker import  BigQueryWorker
 from utils.enums import  CSV_DUMP_DIR, LOOKER_PROJECT_MAPPING_PATH
 
 hardcoded_list = [
@@ -15,13 +14,14 @@ hardcoded_list = [
                   'group',
                   'dashboard',
                   'look',
-                  'explore_label',
                   'history',
                   'query',
-                  'lookml_fields',
                   'query_metrics'
                  ]
 
+
+# Removed: lookml_fields
+# Removed: explore_label
 
 parser = argparse.ArgumentParser(
                     prog='thetool_extractor',
@@ -34,6 +34,7 @@ parser.add_argument('-m', '--mapping-file', help='Path to Looker project mapping
 
 args = parser.parse_args()
 
+# @@@ STEP 2 @@@
 def extract(table_name:str):
     print("=" * 30 + '\n\n' +
                 f"Start extracting {table_name} table" + '\n\n' +
@@ -47,14 +48,12 @@ def extract(table_name:str):
             looker_worker.set_project_mapping(project_mapping_path)
         looker_worker.fetch()
         looker_worker.dump()
-        bq_worker = BigQueryWorker(table_name = table)
-        bq_worker.truncate_table() # full refresh
-        bq_worker.fetch()
-        bq_worker.dump()
+
     except Exception as e:
         print(e)
         print(f"Error while extracting {table_name} table")
 
+# @@@ STEP 1 @@@
 if __name__ == "__main__":
     # make output path if not exist
     if not os.path.exists(CSV_DUMP_DIR):

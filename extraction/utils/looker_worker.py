@@ -26,11 +26,15 @@ from .lookml_repo import LookerRepo
 
 
 class LookerWorker(Worker):
+
+
+    # @@@ STEP 5 @@@
     def __init__(
             self,
             table_name:str
             ) -> None:
         super().__init__(table_name = table_name)
+
         self.sdk = looker_sdk.init40()
         self.start_time: str | int | None = START_TIME
         self.project_mapping = None
@@ -38,14 +42,18 @@ class LookerWorker(Worker):
         self.query_timezone= QUERY_TIMEZONE
         self.datetime_format= DATETIME_FORMAT
         self.row_count = self._fetch_rowcount()
+
+        # @@@ STEP 7 @@@
         if self.row_count:
             self.cursor_field: str = self.table_data["cursor_field"] or (self.table_data["primary_key"] if not isinstance(self.table_data["primary_key"], list) else self.table_data["batch_cursor_field"])  # Cursor field in Looker query
             self.is_id_cursor_field = False
+
             if self.cursor_field and (self.cursor_field == ID_CURSOR_FIELD or self.cursor_field.split(".")[1] == ID_CURSOR_FIELD):
                 print(f"Cursor field is {self.cursor_field}.")
                 self.is_id_cursor_field = True
                 # cursor field is id; assigns int type
                 self.start_time = START_ID
+
             self.cursor_value = None
             self.is_last_batch = None
         self.file_num = -1
@@ -55,6 +63,7 @@ class LookerWorker(Worker):
             project_mapping = json.load(f)
         self.project_mapping = project_mapping
 
+    # @@@ STEP 6 @@@
     def _fetch_rowcount(self) -> int | None:
         """
         executes a rowcount query on the target view's count_measure.
@@ -93,7 +102,7 @@ class LookerWorker(Worker):
 
             return None
 
-
+    # @@@ STEP 9 @@@
     def create_query(
             self,
             table_data,
@@ -113,16 +122,19 @@ class LookerWorker(Worker):
             sorts = []
             print(f"Extracting in incremental mode for view [{view}].")
             sorts = [cursor_field] if cursor_field else []
+
             if not self.is_id_cursor_field:
                 filters = {cursor_field: f"after {start_time}"} if cursor_field else {}
             else:
                 filters = {cursor_field: f">= {start_time}"} if cursor_field else {}
+
             filters.update(self.table_data['filters'] if self.table_data['filters'] else {})
-            # print(
-            #     f"Creating query on view [{view}], filters {filters}, cursor_field {cursor_field},"
-            #     f" timezone [{self.query_timezone}]"
-            #     f" fields [{fields}]"
-            #     )
+
+            print(
+                 f"Creating query on view [{view}], filters {filters}, cursor_field {cursor_field},"
+                 f" timezone [{self.query_timezone}]"
+                 f" fields [{fields}]"
+                 )
 
             body = models.WriteQuery(
                     model = model,
@@ -142,23 +154,26 @@ class LookerWorker(Worker):
                     limit = str(self.row_limit),
                     query_timezone = self.query_timezone,
                     )
+            
         query = self.sdk.create_query(
             body = body
         )
         query_id = query.id
+
         if not query_id:
             raise ValueError(f"Failed to create query for view [{view}]")
         print(f"Successfully created query, query_id is [{query_id}]"
             f"query url: {query.share_url}"
             )
+        
         return query_id
 
 
 
-
+    # @@@ STEP 10 @@@
     def run_query(self,query_id: str):
         """
-        Run query and save data to GCS
+        Run query and save data
         """
         create_query_task = models.WriteCreateQueryTask(
             query_id=query_id, result_format=models.ResultFormat.csv
@@ -184,8 +199,8 @@ class LookerWorker(Worker):
             elapsed += delay
             if elapsed >= QUERY_TIMEOUT:
                 raise Exception(
-                    f"Waited for [{elapsed}] seconds, which exceeded timeout"
-                    )
+                    f"Waited for [{elapsed}] seconds, which exceeded timeout")
+
         print(f"Query task completed in {poll.runtime:.2f} seconds")
         print(f"Waited {elapsed} seconds")
 
@@ -193,8 +208,9 @@ class LookerWorker(Worker):
 
         return task_result
 
-
+    # @@@ STEP 8 @@@
     def fetch(self, **kwargs):
+
         if self.table_name == 'explore_label': # explore_label use a different API to extract from Looker
             self.get_explore_label()
             self.df = self.get_explore_label()
@@ -207,6 +223,8 @@ class LookerWorker(Worker):
                                  Please make a copy of looker_project.json and fill in the
                                  mappings of your LookML project(s).
                                  """)
+            
+
         else:
             query_id = self.create_query(self.table_data,
                     self.start_time,
@@ -218,10 +236,14 @@ class LookerWorker(Worker):
 
         self.map_fields_name_with_config()
 
+        # @@@ STEP 11 @@@
         if self.row_count:
-            # grab the cursor val for batch extraction
+            # Grab the cursor val for batch extraction
             self.last_cursor_value = self.cursor_value if hasattr(self, 'cursor_value') else None
+            # Grab the last value from df
             self.cursor_value = self.df[self.cursor_field.split('.')[-1]].iloc[-1]
+
+        # If the view don't has row_count, in result don't has a count_measure, and don't has a cursor
         elif not self.row_count and len(self.df) == 50000:
             warnings.warn(f"\n\n\tWARNING : this view [{self.table_name}] has more than 50000 rows "
                   "but there's no fields we can reliably use "
@@ -229,8 +251,6 @@ class LookerWorker(Worker):
                   "\tThis view will be truncated to 50000 rows.\n\n",
                   category=UserWarning
                   )
-
-
 
 
     def map_fields_name_with_config(self):
@@ -243,6 +263,7 @@ class LookerWorker(Worker):
         columns = [schema_info[i]['name'] for i,_ in enumerate(schema_info)]
         self.df.columns = columns
 
+    # @@@ STEP 12 @@@
     def dump(self, **kwargs) -> None:
         table = self.table_name
 
@@ -252,6 +273,7 @@ class LookerWorker(Worker):
             if self.file_num == 0:
                 self.csv_basename = self.csv_name.split('.')[0]
             self.csv_name = self.csv_basename + f"_{self.file_num}.csv"
+            
             # last batch : kills the cursor
             if self.is_last_batch:
                 self.row_count = None
@@ -265,12 +287,15 @@ class LookerWorker(Worker):
                 quotechar='"',
                 quoting=csv.QUOTE_MINIMAL,
                 )
+        
         print(f"sucessfully extracted explore table '{table}'. \n"
             f"total rows extracted: {len(self.df)}. \n"
             f"output file: '{self.csv_name}' \n"
             )
+
         self.total_record += len(self.df)
 
+        # @@@ STEP 13 @@@
         if self.row_count:
             self.fetch()
             if self.last_cursor_value != self.cursor_value:
