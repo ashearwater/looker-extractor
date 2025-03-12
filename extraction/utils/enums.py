@@ -3,9 +3,7 @@ import os
 load_dotenv()
 
 CSV_DUMP_DIR = os.environ.get('CSV_DUMP_DIR','out')
-START_TIME = os.environ.get('START_TIME',"2015-01-01 00:00:00")
-LOOKER_REPO_PATH = os.environ.get('LOOKER_REPO_PATH', 'repo')
-LOOKER_PROJECT_MAPPING_PATH = os.environ.get('LOOKER_PROJECT_MAPPING_PATH', "looker_project.json")
+CURSOR_INITIAL_VALUE = os.environ.get('CURSOR_INITIAL_VALUE',"2015-01-01 00:00:00")
 
 ROW_LIMIT = 50000
 QUERY_TIMEZONE = 'UTC'
@@ -16,9 +14,6 @@ JOINS_KEYS = {}
 DEFAULT_TIMEFRAMES = ['']
 DEFAULT_INTERVALS = ['']
 FOLDERS_TO_SKIP = ['']
-
-
-
 
 ID_CURSOR_FIELD = 'id'
 NULL_CURSOR_FIELD = 'null_cursor_field'
