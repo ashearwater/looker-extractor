@@ -16,10 +16,9 @@ from .enums import (ROW_LIMIT,
                          QUERY_TIMEZONE,
                          QUERY_TIMEOUT,
                          DATETIME_FORMAT,
-                         START_TIME,
+                         CURSOR_INITIAL_VALUE,
                          ID_CURSOR_FIELD,
-                         START_ID,
-                         LOOKER_REPO_PATH
+                         START_ID
                          )
 
 class LookerWorker(Worker):
@@ -33,7 +32,7 @@ class LookerWorker(Worker):
         super().__init__(table_name = table_name)
 
         self.sdk = looker_sdk.init40()
-        self.start_time: str | int | None = START_TIME
+        self.cursor_initial_value = CURSOR_INITIAL_VALUE if self.cursor_initial_value == None else self.cursor_initial_value
         self.project_mapping = None
         self.row_limit = ROW_LIMIT
         self.query_timezone= QUERY_TIMEZONE
@@ -49,7 +48,7 @@ class LookerWorker(Worker):
                 print(f"Cursor field is {self.cursor_field}.")
                 self.is_id_cursor_field = True
                 # cursor field is id; assigns int type
-                self.start_time = START_ID
+                # Shearwater commented: self.cursor_initial_value = START_ID
 
             self.cursor_value = None
             self.is_last_batch = None
@@ -98,7 +97,7 @@ class LookerWorker(Worker):
     def create_query(
             self,
             table_data,
-            start_time: str | int | None,
+            cursor_initial_value: str | int | None,
             ) -> str:
         """
         Create Looker Query
@@ -116,9 +115,9 @@ class LookerWorker(Worker):
             sorts = [cursor_field] if cursor_field else []
 
             if not self.is_id_cursor_field:
-                filters = {cursor_field: f"after {start_time}"} if cursor_field else {}
+                filters = {cursor_field: f"after {cursor_initial_value}"} if cursor_field else {}
             else:
-                filters = {cursor_field: f">= {start_time}"} if cursor_field else {}
+                filters = {cursor_field: f">= {cursor_initial_value}"} if cursor_field else {}
 
             filters.update(self.table_data['filters'] if self.table_data['filters'] else {})
 
@@ -183,12 +182,15 @@ class LookerWorker(Worker):
         delay = 5.0  # waiting seconds
         while True:
             poll = self.sdk.query_task(query_task_id = query_task_id)
+
             if poll.status == "failure" or poll.status == "error":
                 raise Exception(f"Query failed. Response: {poll}")
             elif poll.status == "complete":
                 break
+
             time.sleep(delay)
             elapsed += delay
+            
             if elapsed >= QUERY_TIMEOUT:
                 raise Exception(
                     f"Waited for [{elapsed}] seconds, which exceeded timeout")
@@ -204,7 +206,7 @@ class LookerWorker(Worker):
     def fetch(self, **kwargs):
             
         query_id = self.create_query(self.table_data,
-                self.start_time,
+                self.cursor_initial_value,
                 )
 
         query_results = self.run_query(query_id)
@@ -229,12 +231,23 @@ class LookerWorker(Worker):
                   category=UserWarning
                   )
 
+    def map_fields_name_with_config(self):
+        """
+        uses the field name specified in the schema file instead
+        of fields returned from the api.
+        plus, this maps 1-1 with explore's view.
+        """
+        schema_info = self.schema_info
+        columns = [schema_info[i]['name'] for i,_ in enumerate(schema_info)]
+        self.df.columns = columns
+
+
     # @@@ STEP 12 @@@
     def dump(self, **kwargs) -> None:
         table = self.table_name
 
         if self.row_count:
-            self.start_time = self.cursor_value
+            self.cursor_initial_value = self.cursor_value
             self.file_num += 1
             if self.file_num == 0:
                 self.csv_basename = self.csv_name.split('.')[0]

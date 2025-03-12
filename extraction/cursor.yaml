@@ -1,0 +1,27 @@
+## Cursor field is an id, populate with -1 for a full-load 
+dashboard:
+  cursor_initial_value: 5
+group:
+  cursor_initial_value: -1
+role:
+  cursor_initial_value: 4
+user_facts:
+  cursor_initial_value: 2
+
+## Cursor field is created_time, keep it null if want a full-load
+history:
+  cursor_initial_value: '2025-03-01 00:00:00'
+query:
+  cursor_initial_value: '2025-03-01 00:00:00'
+query_metrics:
+  cursor_initial_value: '2025-03-01 00:00:00'
+user:
+  cursor_initial_value: '2025-03-01 00:00:00'
+
+## Views that doesn't have count_measure, keep value as NULL. Results limited to 50.000
+user_facts_role:
+  cursor_initial_value: null
+group_user:
+  cursor_initial_value: null
+look:
+  cursor_initial_value: null

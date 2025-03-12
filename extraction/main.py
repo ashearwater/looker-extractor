@@ -3,7 +3,7 @@ import os
 import shutil
 
 from utils.looker_worker import  LookerWorker
-from utils.enums import  CSV_DUMP_DIR, LOOKER_PROJECT_MAPPING_PATH
+from utils.enums import  CSV_DUMP_DIR
 
 hardcoded_list = [
                   'user',
@@ -19,9 +19,6 @@ hardcoded_list = [
                   'query_metrics'
                  ]
 
-
-# Removed: lookml_fields
-# Removed: explore_label
 
 parser = argparse.ArgumentParser(
                     prog='thetool_extractor',
@@ -41,7 +38,6 @@ def extract(table_name:str):
                 "=" * 30
                 )
     table = table_name
-    project_mapping_path = args.mapping_file if args.mapping_file else LOOKER_PROJECT_MAPPING_PATH
     try:
         looker_worker = LookerWorker(table_name = table)
         looker_worker.fetch()

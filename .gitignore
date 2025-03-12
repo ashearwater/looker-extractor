@@ -10,3 +10,4 @@ __pycache__/
 *.pyd
 test_final.csv
 extraction/repo/*
+looker.ini
