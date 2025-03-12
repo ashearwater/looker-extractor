@@ -29,15 +29,15 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 ## 2.2. Configuring `looker.ini`
-
-### 2.2.1. Update the _&lt;your_looker_endpoint&gt;_ in `base_url` with your instance url.
+### 2.2.1. Make a copy of `looker_example.ini` and name it `looker.ini`
+### 2.2.2. Update the _&lt;your_looker_endpoint&gt;_ in `base_url` with your instance url.
 
 Example:
 ```
 base_url=https://example.cloud.looker.com:19999
 ```
 
-### 2.2.2. Replace the _&lt;your_API3_client_id&gt;_  and _&lt;your_API3_client_secret&gt;_ with your API client ID and secret.
+### 2.2.3. Replace the _&lt;your_API3_client_id&gt;_  and _&lt;your_API3_client_secret&gt;_ with your API client ID and secret.
 
 Refer to [this guide](https://cloud.google.com/looker/docs/api-auth#authentication_with_an_sdk) to create client ID and secret for this step.
 
