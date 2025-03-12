@@ -111,7 +111,8 @@ class LookerWorker(Worker):
             cursor_field = self.cursor_field
 
             sorts = []
-            print(f"Extracting in incremental mode for view [{view}].")
+            print(f"Extracting using cursor for view [{view}] model [{model}].")
+            print(f"Cursor initial value [{cursor_initial_value}]")
             sorts = [cursor_field] if cursor_field else []
 
             if not self.is_id_cursor_field:
@@ -121,11 +122,10 @@ class LookerWorker(Worker):
 
             filters.update(self.table_data['filters'] if self.table_data['filters'] else {})
 
-            print(
-                 f"Creating query on view [{view}], filters {filters}, cursor_field {cursor_field},"
-                 f" timezone [{self.query_timezone}]"
-                 f" fields [{fields}]"
-                 )
+            print(f"Creating query on view [{view}], filters {filters}, cursor_field {cursor_field}")
+                #  f" timezone [{self.query_timezone}]"
+                #  f" fields [{fields}]"
+                #  )
 
             body = models.WriteQuery(
                     model = model,
@@ -137,7 +137,7 @@ class LookerWorker(Worker):
                     query_timezone = self.query_timezone,
                     )
         else:
-            print(f"Extracting in full mode for view [{view}].")
+            print(f"Extracting without a cursor for view [{view}].")
             body = models.WriteQuery(
                     model = model,
                     view = view,
