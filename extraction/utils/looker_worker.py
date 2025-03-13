@@ -6,7 +6,7 @@ import csv
 import hashlib
 import warnings
 import json
-
+from datetime import datetime, timedelta
 
 from looker_sdk.sdk.api40 import methods as methods40
 from looker_sdk import models40 as models
@@ -32,7 +32,7 @@ class LookerWorker(Worker):
         super().__init__(table_name = table_name)
 
         self.sdk = looker_sdk.init40()
-        self.cursor_initial_value = CURSOR_INITIAL_VALUE if self.cursor_initial_value == None else self.cursor_initial_value
+        self.cursor_initial_value: str | int | None = CURSOR_INITIAL_VALUE
         self.project_mapping = None
         self.row_limit = ROW_LIMIT
         self.query_timezone= QUERY_TIMEZONE
@@ -46,12 +46,23 @@ class LookerWorker(Worker):
 
             if self.cursor_field and (self.cursor_field == ID_CURSOR_FIELD or self.cursor_field.split(".")[1] == ID_CURSOR_FIELD):
                 print(f"Cursor field is {self.cursor_field}.")
-                self.is_id_cursor_field = True
                 # cursor field is id; assigns int type
-                # Shearwater commented: self.cursor_initial_value = START_ID
+                self.is_id_cursor_field = True
 
             self.cursor_value = None
             self.is_last_batch = None
+
+            # if the value days_ago_to_start_pull are filled, priorize it
+            if self.days_ago_to_start_pull != None:
+                self.cursor_initial_value = (datetime.today() - timedelta(days= abs(self.days_ago_to_start_pull))).strftime('%Y-%m-%d 00:00:00')
+            # if the value days_ago_to_start_pull are not filled, use cursor_manual_initial_value
+            elif self.cursor_manual_initial_value != None:
+                self.cursor_initial_value = self.cursor_manual_initial_value
+            # if none are filled, fill with initial values according to the type of the cursor
+            else:
+                self.cursor_initial_value = START_ID if self.is_id_cursor_field else CURSOR_INITIAL_VALUE
+
+        # Set the initial csv number
         self.file_num = -1
 
     # @@@ STEP 6 @@@
@@ -253,9 +264,10 @@ class LookerWorker(Worker):
                 self.csv_basename = self.csv_name.split('.')[0]
             self.csv_name = self.csv_basename + f"_{self.file_num}.csv"
             
-            # last batch : kills the cursor
-            if self.is_last_batch:
-                self.row_count = None
+            # # last batch : kills the cursor
+            # if self.is_last_batch:
+            #     self.row_count = None
+            #     print("End of extraction2")
 
         # create the dir
         if not os.path.exists(self.csv_target_path):
@@ -275,7 +287,12 @@ class LookerWorker(Worker):
         self.total_record += len(self.df)
 
         # @@@ STEP 13 @@@
-        if self.row_count:
+        if len(self.df) < self.row_limit or self.is_last_batch == True:
+            self.is_last_batch = True
+            self.row_count = None
+            print(f"End of extraction")
+            
+        elif self.row_count:
             self.fetch()
             if self.last_cursor_value != self.cursor_value:
                 if len(self.df) < self.row_limit:

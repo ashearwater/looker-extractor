@@ -1,27 +1,31 @@
-## Cursor field is an id, populate with -1 for a full-load 
+## Cursor field is an id, keep it null if want a full-load
 dashboard:
-  cursor_initial_value: 5
+  cursor_manual_initial_value: null
 group:
-  cursor_initial_value: -1
+  cursor_manual_initial_value: null
 role:
-  cursor_initial_value: 4
+  cursor_manual_initial_value: 4
 user_facts:
-  cursor_initial_value: 2
+  cursor_manual_initial_value: 2
 
-## Cursor field is created_time, keep it null if want a full-load
+## Cursor field is created_time, keep all null if want a full-load
 history:
-  cursor_initial_value: '2025-03-01 00:00:00'
+  cursor_manual_initial_value: '2025-03-01 00:00:00'
+  days_ago_to_start_pull: null
 query:
-  cursor_initial_value: '2025-03-01 00:00:00'
+  cursor_manual_initial_value: '2025-03-01 00:00:00'
+  days_ago_to_start_pull: 10
 query_metrics:
-  cursor_initial_value: '2025-03-01 00:00:00'
+  cursor_manual_initial_value: '2025-03-01 00:00:00'
+  days_ago_to_start_pull: null
 user:
-  cursor_initial_value: '2025-03-01 00:00:00'
+  cursor_manual_initial_value: '2025-03-01 00:00:00'
+  days_ago_to_start_pull: 13
 
 ## Views that doesn't have count_measure, keep value as NULL. Results limited to 50.000
 user_facts_role:
-  cursor_initial_value: null
+  cursor_manual_initial_value: null
 group_user:
-  cursor_initial_value: null
+  cursor_manual_initial_value: null
 look:
-  cursor_initial_value: null
+  cursor_manual_initial_value: null

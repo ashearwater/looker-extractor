@@ -20,7 +20,8 @@ class Worker(ABC):
 
         self._load_cursor(cursor_file)
         self.table_cursor_data = self.cursor_data[table_name]
-        self.cursor_initial_value = self.table_cursor_data['cursor_initial_value']
+        self.cursor_manual_initial_value = self.table_cursor_data['cursor_manual_initial_value']
+        self.days_ago_to_start_pull = self.table_cursor_data['days_ago_to_start_pull'] if 'days_ago_to_start_pull' in self.table_cursor_data else None
 
         self._load_schema(schema_file)
         self.table_data = self.schema_data[table_name]
