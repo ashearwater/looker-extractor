@@ -3,7 +3,7 @@ import os
 import shutil
 
 from utils.looker_worker import  LookerWorker
-from utils.enums import  CSV_DUMP_DIR
+from utils.enums import  CSV_DUMP_DIR, LOOKER_PROJECT_MAPPING_PATH
 
 hardcoded_list = [
                   'user',

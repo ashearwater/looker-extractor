@@ -4,6 +4,7 @@ load_dotenv()
 
 CSV_DUMP_DIR = os.environ.get('CSV_DUMP_DIR','out')
 CURSOR_INITIAL_VALUE = os.environ.get('CURSOR_INITIAL_VALUE',"2015-01-01 00:00:00")
+LOOKER_PROJECT_MAPPING_PATH = os.environ.get('LOOKER_PROJECT_MAPPING_PATH', "looker_project.json")
 
 ROW_LIMIT = 50000
 QUERY_TIMEZONE = 'UTC'
